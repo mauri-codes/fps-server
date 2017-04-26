@@ -40,7 +40,7 @@ router.post("/uploadlink", function (req, res) {
     var username    = req.body.username;
     var deviceName  = req.body.devicename;
 
-    Link.remove({ userName: username }, function(err) {
+    Link.remove({$or: [{ userName: username }, {deviceName: deviceName}]}, function(err) {
         if (err) {
             console.log("error");
         }
@@ -55,5 +55,91 @@ router.post("/uploadlink", function (req, res) {
     res.json({done: "success"});
 
 });
+//checking device password
+router.post("/deviceconf", function (req, res, next) {
+    var password = req.body.pass;
+    var deviceName  = req.body.devicename;
+    Device.findOne({
+        name: deviceName
+    }, function (err, dev) {
+        if(err) res.json({success: false, message: err});
+        if(!dev) res.json({success: false, message: "bad devname"});
+        else{
+            dev.checkKey(password, function (err, isMatch) {
+                if(isMatch){
+                    next();
+                }else{
+                    res.json({success: false, message: "bad key"});
+                }
+            })
+        }
+    });
+});
+
+router.post("/deviceconf", function (req, res) {
+    var deviceName  = req.body.devicename;
+    var fingerprint = req.body.fingerprint;
+    var action      = req.body.action;
+    var status      = "";
+    Device.findOne({name: deviceName}, function (err, dev) {
+        if(err) res.json({success: false, message: err});
+        Link.findOne({
+            deviceName: deviceName,
+            status: "waiting"
+        }, function (err, link) {
+            if(err) res.json({success: false, message: err});
+            if(!link)
+                res.json({success: false, message: "no request"});
+            else{
+                if(action == "register"){
+                    if(link.action == "registerdev"){
+                        if(!dev)
+                            status = "register dev";
+                        else
+                            status = "used device";
+                    }else if(link.action == "register"){
+                        if(!dev)
+                            status = "no device";
+                        else
+                            status = "register user";
+                    }else
+                        status = "incorrect mode";
+                }else{
+                    if(link.action == "log")
+                        status = "log user";
+                    else
+                        status = "incorrect mode";
+                }
+                Link.findOneAndUpdate(
+                    {deviceName: deviceName, status: "waiting"},
+                    {status: status}, //change to this if found
+                    function (err, link2) {
+                        if(err) res.json({success: false, message: err});
+                        else    {
+                            res.json({success: true});
+                        }
+                    }
+                );
+            }
+        });
+    })
+
+});
+
+
+//checks if register is done by the device
+router.post("/reg_done", function (req, res) {
+    var deviceName  = req.body.devicename;
+    console.log(deviceName);
+    Link.findOne({deviceName: deviceName}, function (err, link) {
+        if(err){ res.json({success: false, message: err});}
+        if(!link){res.json({success: false});}
+        else{
+            console.log(link);
+            res.json({success: true, status: link.status});
+        }
+    });
+});
+
 
 module.exports = router;
