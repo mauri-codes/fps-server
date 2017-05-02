@@ -158,4 +158,18 @@ router.post("/reg_user", function (req, res) {
     newUser.save();
     res.json({done: "success"});
 });
+
+router.post("/check_user", function (req, res) {
+    var email = req.body.email;
+    var devicename = req.body.devicename;
+    var fingerprint = req.body.fingerprint;
+    Ud.findOne({userName: email, number: fingerprint}, function (err, ud) {
+        if(err){ res.json({success: false, message: err});}
+        if(!ud){res.json({success: false, message: "no user"});}
+        else{
+            res.json({success: true, message: "check done"});
+        }
+    });
+});
+
 module.exports = router;
