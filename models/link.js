@@ -5,7 +5,8 @@ var linkSchema = mongoose.Schema({
     status: {type: String, enum:['incorrect mode', 'waiting', 'register dev',
                                  'used device', 'no device', 'register user', 'log user'], default: 'waiting'},
     createdAt: { type: Date, default: Date.now },
-    action: { type: String, enum:['register', 'log', 'registerdev']}
+    action: { type: String, enum:['register', 'log', 'registerdev']},
+    fing: { type: String }
 });
 
 var Link = mongoose.model("Link", linkSchema);

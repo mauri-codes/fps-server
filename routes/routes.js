@@ -112,7 +112,7 @@ router.post("/deviceconf", function (req, res) {
                 }
                 Link.findOneAndUpdate(
                     {deviceName: deviceName, status: "waiting"},
-                    {status: status}, //change to this if found
+                    {status: status, fing: fingerprint}, //change to this if found
                     function (err, link2) {
                         if(err) res.json({success: false, message: err});
                         else    {
@@ -123,23 +123,39 @@ router.post("/deviceconf", function (req, res) {
             }
         });
     })
-
 });
 
 
 //checks if register is done by the device
 router.post("/reg_done", function (req, res) {
     var deviceName  = req.body.devicename;
-    console.log(deviceName);
     Link.findOne({deviceName: deviceName}, function (err, link) {
         if(err){ res.json({success: false, message: err});}
         if(!link){res.json({success: false});}
         else{
-            console.log(link);
-            res.json({success: true, status: link.status});
+            res.json({success: true, status: link.status, fing: link.fing});
         }
     });
 });
 
-
+router.post("/reg_user", function (req, res) {
+    var name  = req.body.name;
+    var email = req.body.email;
+    var devicename = req.body.devicename;
+    var fingerprint = req.body.fingerprint;
+    var newUD = new Ud({
+        userName: email,
+        deviceName: devicename,
+        fingerprint: email + fingerprint,
+        stats: "user",
+        number: fingerprint
+    });
+    newUD.save();
+    var newUser = new User({
+        email: email,
+        name: name
+    });
+    newUser.save();
+    res.json({done: "success"});
+});
 module.exports = router;
